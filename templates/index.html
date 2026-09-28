@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PlantMed 🌿 — Medicinal Plant Identifier</title>
+  <style>
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f8f4;color:#17321f}
+    .wrap{max-width:1050px;margin:auto;padding:28px 18px 60px}.hero{text-align:center;padding:28px 10px 20px}
+    h1{font-size:42px;margin:0 0 8px}.hero p{margin:0;color:#55705d;font-size:17px}.card{background:white;border-radius:18px;padding:24px;margin-top:20px;box-shadow:0 8px 30px rgba(23,50,31,.08)}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}button,.upload{border:0;border-radius:10px;padding:12px 17px;font-weight:700;cursor:pointer;background:#216b3a;color:white}.secondary{background:#e7f0e9;color:#216b3a}
+    input[type=file]{display:none}.preview{width:100%;max-height:420px;object-fit:contain;border-radius:14px;background:#eef4ef;display:none}.camera{display:none;margin-top:14px}.camera video{width:100%;border-radius:14px;background:#111;max-height:420px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}.item{background:#f6faf6;border-radius:12px;padding:15px}.label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#69816e;font-weight:800}.value{margin-top:5px;line-height:1.5}.result h2{margin:0 0 5px}.bar{height:9px;background:#dce8de;border-radius:99px;overflow:hidden;margin:8px 0}.fill{height:100%;background:#2e7d46;width:0}.top3 div{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5eee7}.muted{color:#6a7c6e}.error{color:#a12626;font-weight:700;margin-top:12px}.spinner{display:none;margin-top:12px}.kn{font-family:"Noto Sans Kannada",Arial,sans-serif}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero"><h1>PlantMed 🌿</h1><p>AI-powered medicinal plant identification using InceptionV3</p></section>
+  <section class="card">
+    <div class="actions">
+      <label class="upload" for="fileInput">📁 Choose Image</label>
+      <button type="button" id="cameraBtn" class="secondary">📷 Use Camera</button>
+      <button type="button" id="captureBtn" class="secondary" style="display:none">Capture & Predict</button>
+    </div>
+    <input id="fileInput" type="file" accept="image/*">
+    <div class="camera" id="cameraBox"><video id="video" autoplay playsinline></video></div>
+    <img id="preview" class="preview" alt="Selected plant">
+    <div id="loading" class="spinner">Analyzing image…</div><div id="error" class="error"></div>
+  </section>
+
+  <section class="card result" id="result" style="display:none">
+    <h2 id="plantName"></h2><div class="muted" id="confidence"></div>
+    <div class="grid">
+      <div class="item"><div class="label">Kannada Name</div><div class="value kn" id="kannada"></div></div>
+      <div class="item"><div class="label">Parts Used</div><div class="value" id="parts"></div></div>
+      <div class="item"><div class="label">Medicinal Uses</div><div class="value" id="uses"></div></div>
+      <div class="item"><div class="label">Grown Area</div><div class="value" id="area"></div></div>
+    </div>
+    <div class="grid">
+      <div class="item"><div class="label">Preparation — English</div><div class="value" id="prepEn"></div></div>
+      <div class="item"><div class="label">Preparation — Kannada</div><div class="value kn" id="prepKn"></div></div>
+    </div>
+    <div class="item" style="margin-top:14px"><div class="label">Top 3 Predictions</div><div class="top3" id="top3"></div></div>
+  </section>
+</div>
+<script>
+const input=document.getElementById('fileInput'), preview=document.getElementById('preview'), cameraBtn=document.getElementById('cameraBtn'), captureBtn=document.getElementById('captureBtn'), cameraBox=document.getElementById('cameraBox'), video=document.getElementById('video'), loading=document.getElementById('loading'), error=document.getElementById('error'), result=document.getElementById('result');
+let stream=null;
+function showPreview(blob){preview.src=URL.createObjectURL(blob);preview.style.display='block'}
+async function predict(blob){error.textContent='';loading.style.display='block';result.style.display='none';const fd=new FormData();fd.append('file',blob,'plant.jpg');try{const r=await fetch('/predict',{method:'POST',body:fd});const d=await r.json();if(!r.ok)throw new Error(d.error||'Prediction failed');document.getElementById('plantName').textContent=d.plant_name;document.getElementById('confidence').textContent=`Confidence: ${d.confidence}%`;document.getElementById('kannada').textContent=d.kannada_name;document.getElementById('parts').textContent=d.parts_used;document.getElementById('uses').textContent=d.uses;document.getElementById('area').textContent=d.grown_area;document.getElementById('prepEn').textContent=d.preparation_en;document.getElementById('prepKn').textContent=d.preparation_kn;document.getElementById('top3').innerHTML=d.top3.map(x=>`<div><span>${x.name}</span><strong>${x.confidence}%</strong></div>`).join('');result.style.display='block';}catch(e){error.textContent=e.message}finally{loading.style.display='none'}}
+input.onchange=()=>{if(input.files[0]){showPreview(input.files[0]);predict(input.files[0])}};
+cameraBtn.onclick=async()=>{try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});video.srcObject=stream;cameraBox.style.display='block';captureBtn.style.display='inline-block';cameraBtn.textContent='Camera On'}catch(e){error.textContent='Camera access was denied or is unavailable.'}};
+captureBtn.onclick=()=>{const c=document.createElement('canvas');c.width=video.videoWidth||640;c.height=video.videoHeight||480;c.getContext('2d').drawImage(video,0,0,c.width,c.height);c.toBlob(b=>{showPreview(b);predict(b)},'image/jpeg',.9)};
+window.addEventListener('beforeunload',()=>stream&&stream.getTracks().forEach(t=>t.stop()));
+</script>
+</body></html>
