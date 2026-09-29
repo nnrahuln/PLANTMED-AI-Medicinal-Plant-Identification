@@ -38,7 +38,7 @@ With the virtual environment activated:
 ```powershell
 uvicorn api:app --host 0.0.0.0 --port 8000
 ```
-API docs: `http://localhost:8000/docs`
+## API docs: `http://localhost:8000/docs`
 
 ## Important
 The model and supplied plant database are retained from the original project. Safety text is deliberately conservative. PLANTMED is an educational identification and information system, not a medical diagnosis, prescription, or guarantee of plant safety. Expert and clinical verification is required before medicinal use.
