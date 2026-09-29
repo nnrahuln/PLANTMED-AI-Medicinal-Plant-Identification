@@ -1,4 +1,4 @@
-# PLANTMED – AI-Powered Medicinal Plant Identification System
+## PLANTMED – AI-Powered Medicinal Plant Identification System
 
 ## Included features
 - AI medicinal plant identification using the supplied InceptionV3 weights
