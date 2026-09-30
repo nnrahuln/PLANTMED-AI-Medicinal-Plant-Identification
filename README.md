@@ -18,7 +18,7 @@
 - Responsive Streamlit UI
 - Docker and Windows launcher files
 
-## VS Code / Windows
+## VS Code / Windows ##
 1. Extract this folder.
 2. Open the `PlantMed_Final` folder in VS Code.
 3. Open Terminal.
